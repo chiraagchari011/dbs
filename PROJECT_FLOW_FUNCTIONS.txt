@@ -1,0 +1,399 @@
+CLASSROOM ALLOCATION MANAGEMENT SYSTEM
+PROJECT FLOW AND FUNCTION-TO-FILE GUIDE
+Project code: 24B-IT-015
+============================================================
+
+1. COMPLETE APPLICATION FLOW
+------------------------------------------------------------
+
+1) Start the app
+   File: run.bat
+   The batch file checks Node.js and npm, creates .env if it is missing,
+   installs packages if needed, runs the sample-data seed script, then
+   starts the Express server with npm start.
+
+2) Serve the website
+   File: server/server.js
+   Code: app.use(express.static(path.join(__dirname, '..', 'public')))
+   Express serves the files in public/ to the browser.
+
+3) Load the page and records
+   Files: public/index.html, public/app.js
+   index.html defines the page. At the end of app.js, loadAllocations()
+   runs and uses fetch() to request GET /api/allocations.
+
+4) Handle the API request
+   File: server/server.js
+   The GET /api/allocations route builds MongoDB query conditions,
+   retrieves and sorts matching allocation documents, then responds with
+   JSON containing records and a count.
+
+5) Show results
+   File: public/app.js
+   request() parses the JSON response. renderRecords() creates the table
+   rows, and updateSummary() updates the summary cards.
+
+6) Create, edit, or delete
+   Browser code in public/app.js sends POST, PUT, or DELETE requests.
+   Express validates the request and performs the MongoDB operation in
+   server/server.js. On success, the browser shows a message and reloads
+   the allocations.
+
+7) Database connection
+   File: server/db.js
+   getDatabase() opens and reuses the MongoDB connection. The server gets
+   the database through this function before using the allocations
+   collection.
+
+
+2. FRONTEND FILES
+============================================================
+
+FILE: public/index.html
+------------------------------------------------------------
+Purpose: Defines the page structure and form controls. It does not query
+MongoDB and does not contain the database search logic.
+
+Important elements / IDs:
+
+  #searchInput
+    Search box. app.js reads this value and sends it as the API's search
+    query parameter.
+
+  #departmentFilter, #buildingFilter, #dayFilter
+    Dropdown filters. Their values are sent to GET /api/allocations.
+
+  #roomFilter, #capacityMin, #capacityMax
+    Room and capacity filters.
+
+  #startAfter, #endBefore
+    Time boundary filters. The backend matches allocations whose start
+    time is at or after the first boundary and end time is at or before
+    the second boundary.
+
+  #sortBy, #sortDirection
+    Sorting controls.
+
+  #allocationRows
+    Table body that app.js fills with allocation rows.
+
+  #allocationForm
+    Dialog form used to create and edit an allocation.
+
+  #themeToggle
+    Button that switches between dark and light themes.
+
+
+FILE: public/app.js
+------------------------------------------------------------
+Purpose: Browser-side JavaScript. It handles user actions, calls the API
+with fetch(), and displays returned records.
+
+Function: setTheme(theme)
+Code: document.body.dataset.theme = theme
+      localStorage.setItem('classroom-theme', theme)
+Purpose: Applies dark or light mode and remembers the choice in the
+browser's local storage.
+
+Function: colorForDepartment(department)
+Code: return `dept-color-${hash % 6}`
+Purpose: Produces a repeatable CSS color class for each department.
+
+Function: escapeHtml(value)
+Code: value.replace(/[&<>"']/g, ...)
+Purpose: Escapes special HTML characters before database values are
+inserted into the table markup.
+
+Function: request(url, options = {})
+Code: fetch(url, { headers: { 'Content-Type': 'application/json' }, ...options })
+Purpose: Sends HTTP requests to the Express API, parses JSON, and reports
+API errors to the calling code.
+
+Function: filtersToQuery()
+Code: const params = new URLSearchParams()
+Purpose: Reads current search, filter, and sort inputs and converts them
+into a URL query string for GET /api/allocations.
+
+Function: updateSummary(records)
+Code: new Set(records.map((item) => item.department))
+Purpose: Calculates the number of departments, distinct rooms, and
+average capacity, then updates the summary cards.
+
+Function: fillSelect(id, values, label)
+Code: select.innerHTML = `<option value="">${label}</option>` + ...
+Purpose: Fills department and building dropdown choices using values
+from the database records.
+
+Function: renderRecords(records)
+Code: rows.innerHTML = records.map((item) => `...`).join('')
+Purpose: Builds schedule table rows, displays empty state when there are
+no matches, and attaches edit/delete identifiers to action buttons.
+
+Function: loadAllocations()
+Code: const data = await request(`${API}?${filtersToQuery()}`)
+Purpose: Gets matching allocations from the API, renders them, loads the
+full collection for summary cards/filter options when needed, and handles
+load errors.
+
+Function: openForm(record = null)
+Code: dialog.showModal()
+Purpose: Opens a blank form for adding or fills the form with an existing
+record for editing. The allocation ID becomes read-only during edit.
+
+Function: showToast(message)
+Code: toast.classList.add('show')
+Purpose: Shows a temporary status message such as saved or deleted.
+
+Search behavior:
+  The input listener watches #searchInput. It waits 250 milliseconds
+  after typing, then calls loadAllocations(). filtersToQuery() sends the
+  value as search=. The actual MongoDB matching is done by the backend
+  GET /api/allocations route in server/server.js.
+
+Create/update behavior:
+  The submit listener on #allocationForm reads fields with FormData,
+  checks that end time is later than start time, then calls request().
+  New records use POST /api/allocations. Edits use
+  PUT /api/allocations/:allocationId. On success it closes the dialog,
+  displays a toast, and reloads the table.
+
+Edit behavior:
+  The table click listener sees data-action="edit", requests
+  GET /api/allocations/:allocationId, then passes the returned record to
+  openForm(record).
+
+Delete behavior:
+  The table click listener sees data-action="delete", asks the user with
+  confirm(), then sends DELETE /api/allocations/:allocationId. It reloads
+  the table after a successful delete.
+
+Filter behavior:
+  Input/change listeners call loadAllocations(). The clear-filters button
+  clears values and reloads. The sort button toggles ascending/descending.
+
+Startup code:
+  loadAllocations()
+Purpose: Runs when app.js loads to fetch and display the initial schedule.
+
+
+FILE: public/styles.css
+------------------------------------------------------------
+Purpose: Visual styling only; it does not contain application/database
+logic.
+
+Contains:
+  - Layout, table, form, modal dialog, and button styles.
+  - Responsive CSS rules for tablets and phones.
+  - Light theme styles and dark theme styles under body[data-theme="dark"].
+  - Black/dark surfaces, silver text, white emphasis, and magenta action
+    highlights in dark mode.
+  - Department color classes dept-color-0 through dept-color-5.
+
+
+3. BACKEND FILES
+============================================================
+
+FILE: server/server.js
+------------------------------------------------------------
+Purpose: Express backend. It serves frontend files, defines API routes,
+validates data, queries MongoDB, and returns JSON.
+
+Middleware:
+  app.use(express.json())
+  Parses JSON request bodies so POST and PUT handlers can read req.body.
+
+  app.use(express.static(...public...))
+  Serves the website files to the browser.
+
+Function: cleanAllocation(body)
+Code: item[key] = key === 'capacity' ? Number(value) : String(value || '').trim()
+Purpose: Copies the allowed allocation fields, trims text, and converts
+capacity from a form string into a number.
+
+Function: validateAllocation(item)
+Code: const missing = REQUIRED.filter(...)
+Purpose: Checks required fields, allowed weekday, 24-hour HH:MM times,
+end time after start time, and positive whole-number capacity. Returns
+an error message or null if valid.
+
+Route: GET /api/allocations
+Code: app.get('/api/allocations', async (req, res, next) => { ... })
+Purpose: Lists allocations and applies search, filters, and sorting.
+
+Search logic:
+  conditions.push({ $or: [ { allocationId: ... }, { courseCode: ... },
+                           { courseName: ... } ] })
+Purpose: Finds text in allocation ID, course code, or course name. Search
+is case-insensitive. Input is escaped before use as a regular expression.
+
+Filter logic:
+  conditions.push({ [field]: req.query[field] })
+Purpose: Adds department, building, and day equality conditions.
+
+Capacity logic:
+  range.$gte = Number(req.query.capacityMin)
+  range.$lte = Number(req.query.capacityMax)
+Purpose: Implements inclusive minimum/maximum seat capacity filters.
+
+Time logic:
+  startTime: { $gte: req.query.startAfter }
+  endTime: { $lte: req.query.endBefore }
+Purpose: Finds records within the supplied time boundaries.
+
+Room logic:
+  roomNumber: { $regex: ..., $options: 'i' }
+Purpose: Case-insensitive room-number search.
+
+Logical combination:
+  const filter = conditions.length ? { $and: conditions } : {}
+Purpose: Requires all submitted filters to match. Search fields themselves
+use $or.
+
+Optional multiple-day query:
+  day: { $in: String(req.query.days).split(',').filter(Boolean) }
+Purpose: Allows a direct API request to match any of several days. The
+website dropdown currently selects one day at a time.
+
+Sorting:
+  collection.find(filter).sort(sort).toArray()
+Purpose: MongoDB returns records sorted by an allowlisted field in
+ascending or descending order. startTime is used as a secondary order
+when another field is selected.
+
+Route: GET /api/allocations/:allocationId
+Code: collection.findOne({ allocationId: req.params.allocationId })
+Purpose: Retrieves one allocation for the edit form or direct lookup.
+Returns HTTP 404 if the ID is not found.
+
+Route: POST /api/allocations
+Code: collection.insertOne(item)
+Purpose: Validates and inserts a new allocation. Returns HTTP 201 on
+success. Returns HTTP 400 for validation errors and HTTP 409 for a
+duplicate allocation ID.
+
+Route: PUT /api/allocations/:allocationId
+Code: collection.findOneAndUpdate({ allocationId: ... }, { $set: item }, ...)
+Purpose: Updates the existing allocation fields for that ID. Returns
+HTTP 404 when no matching record exists.
+
+Route: DELETE /api/allocations/:allocationId
+Code: collection.deleteOne({ allocationId: req.params.allocationId })
+Purpose: Deletes one allocation. Returns 404 if nothing was deleted.
+
+Error middleware:
+  app.use((error, req, res, next) => { ... })
+Purpose: Logs unexpected errors and returns a generic HTTP 500 JSON
+message to the browser.
+
+Server startup:
+  app.listen(PORT, () => console.log(...))
+Purpose: Starts the HTTP server; default port is 3000, configurable in
+.env using PORT.
+
+
+FILE: server/db.js
+------------------------------------------------------------
+Purpose: Keeps MongoDB connection setup in one reusable module.
+
+Function: getDatabase()
+Code: client = new MongoClient(uri); await client.connect();
+Purpose: Connects once, selects DB_NAME, stores the database in a module
+variable, and returns the same database object on later calls.
+
+Function: closeDatabase()
+Code: if (client) await client.close()
+Purpose: Closes the MongoDB connection. The seed script calls it when
+finished.
+
+Configuration:
+  MONGODB_URI defaults to mongodb://127.0.0.1:27017
+  DB_NAME defaults to classroom_allocation_db
+
+
+FILE: server/seed.js
+------------------------------------------------------------
+Purpose: Supplies 15 sample allocation documents and prepares indexes.
+
+Data:
+  const allocations = [ ...15 allocation objects... ]
+Purpose: Example data used to populate the allocations collection.
+
+Function: seed()
+Code: await collection.createIndex({ allocationId: 1 }, { unique: true })
+Purpose: Creates a unique allocationId index and a courseCode index.
+
+Upsert code:
+  updateOne: { filter: { allocationId: item.allocationId },
+               update: { $setOnInsert: item }, upsert: true }
+Purpose: Adds a sample only if its allocationId is missing. It does not
+clear the collection or overwrite an existing allocation.
+
+Cleanup:
+  finally { await closeDatabase() }
+Purpose: Closes the seed script's MongoDB connection whether seeding
+succeeds or fails.
+
+
+4. PROJECT CONFIGURATION / SUPPORT FILES
+============================================================
+
+FILE: package.json
+  Lists Node.js dependencies: Express, MongoDB driver, and dotenv.
+  npm start runs: node server/server.js
+  npm run seed runs: node server/seed.js
+
+FILE: package-lock.json
+  Records exact installed dependency versions so npm can reproduce the
+  same dependency tree on another computer.
+
+FILE: .env
+  Local settings: MongoDB URI, database name, and port. Do not share this
+  file if it includes private credentials.
+
+FILE: .env.example
+  Safe example of the expected environment variables. run.bat copies it
+  to .env if .env does not exist.
+
+FILE: .gitignore
+  Excludes node_modules, .env, and npm debug logs from version control.
+
+FILE: run.bat
+  Windows launcher. It checks node and npm, creates .env if needed,
+  installs dependencies if node_modules/express is missing, runs npm run
+  seed, and finally runs npm start. Run from PowerShell as .\run.bat.
+
+FILE: README.md
+  Setup instructions, architecture outline, database design, and example
+  API query.
+
+FILE: Classroom_Allocation_Viva_Guide.docx
+  Longer viva explanation, system flow, database queries, limitations,
+  and sample viva questions with answers.
+
+FILE: PROJECT_FLOW_FUNCTIONS.txt
+  This function-to-file quick reference.
+
+
+5. SHORT PRESENTATION FLOW TO MEMORIZE
+============================================================
+
+Browser page (index.html)
+        |
+        | app.js calls fetch('/api/allocations...')
+        v
+Express API (server/server.js)
+        |
+        | getDatabase() from server/db.js
+        v
+MongoDB: classroom_allocation_db.allocations
+        |
+        | JSON response
+        v
+app.js renders rows, counts, and messages in the browser
+
+In one sentence:
+  HTML/CSS show the interface, app.js handles browser interactions and
+  fetch requests, Express validates and exposes routes, db.js connects to
+  MongoDB, and MongoDB stores the allocation documents.
+
+END OF GUIDE

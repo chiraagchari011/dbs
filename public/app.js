@@ -5,11 +5,26 @@ const dialog = document.querySelector('#allocationDialog');
 const rows = document.querySelector('#allocationRows');
 const emptyState = document.querySelector('#emptyState');
 const formError = document.querySelector('#formError');
+const themeToggle = document.querySelector('#themeToggle');
 const filterIds = ['searchInput', 'departmentFilter', 'buildingFilter', 'dayFilter', 'roomFilter', 'capacityMin', 'capacityMax', 'startAfter', 'endBefore', 'sortBy'];
 let editingId = null;
 let descending = false;
 let allRecords = [];
 let toastTimer;
+
+function setTheme(theme) {
+  document.body.dataset.theme = theme;
+  const isDark = theme === 'dark';
+  themeToggle.setAttribute('aria-pressed', String(isDark));
+  themeToggle.setAttribute('aria-label', `Switch to ${isDark ? 'light' : 'dark'} mode`);
+  themeToggle.querySelector('.theme-symbol').textContent = isDark ? '☼' : '☾';
+  themeToggle.querySelector('.theme-label').textContent = isDark ? 'Light mode' : 'Dark mode';
+  localStorage.setItem('classroom-theme', theme);
+}
+
+const savedTheme = localStorage.getItem('classroom-theme');
+if (savedTheme === 'light' || savedTheme === 'dark') setTheme(savedTheme);
+themeToggle.addEventListener('click', () => setTheme(document.body.dataset.theme === 'dark' ? 'light' : 'dark'));
 
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
