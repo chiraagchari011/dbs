@@ -78,3 +78,46 @@ body[data-theme="dark"] .form-error{color:#ff7893}
 body[data-theme="dark"] .toast{background:#292127;border:1px solid #68304d;color:#fff}
 body[data-theme="dark"] .page-shell footer span{color:#ed168f}
 @media(max-width:560px){.theme-toggle{margin-left:auto;padding:6px 8px}.live-label{display:none}}
+
+/* Readability pass: increase small interface text while preserving hierarchy. */
+.topbar h1{font-size:18px}
+.eyebrow{font-size:10px}
+.live-label{font-size:13px}
+.welcome-row h2{font-size:clamp(22px,2.3vw,29px)}
+.subheading{font-size:15px}
+.button{font-size:14px}
+.stat-top{font-size:13px}
+.stat-card strong{font-size:27px}
+.stat-card small{font-size:12px}
+.panel h3{font-size:16px}
+.panel-heading p,.table-heading p{font-size:13px}
+.text-button{font-size:13px}
+.filter-grid label,.form-grid label{font-size:12px}
+.filter-grid input,.filter-grid select,.form-grid input,.form-grid select{font-size:13px}
+.filter-footer p,.sort-controls{font-size:12px}
+.sort-controls select,.sort-direction{font-size:12px}
+th{font-size:10px}
+td{font-size:12px}
+.id-badge,.secondary-text,.building-label,.capacity-pill{font-size:11px}
+.course-title,.room-cell,.day-cell{font-size:12px}
+.table-tag{font-size:9px}
+.empty-state h3{font-size:16px}
+.empty-state p{font-size:13px}
+.dialog-heading h2{font-size:22px}
+.dialog-intro,.form-error{font-size:13px}
+.form-grid input,.form-grid select{height:40px}
+.close-button{font-size:23px}
+.page-shell footer{font-size:10px}
+.toast{font-size:13px}
+.theme-toggle{font-size:12px}
+@media(max-width:560px){
+  .topbar h1{font-size:16px}
+  .welcome-row h2{font-size:22px}
+  .subheading{font-size:13px}
+  .welcome-row>.button{font-size:12px}
+  .stat-top{font-size:11px}
+  .stat-card small{font-size:11px}
+  .filter-grid label{font-size:11px}
+  .filter-grid input,.filter-grid select{font-size:12px}
+  .sort-controls select,.sort-direction{font-size:11px}
+}

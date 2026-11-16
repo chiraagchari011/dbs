@@ -1,0 +1,443 @@
+CLASSROOM ALLOCATION MANAGEMENT SYSTEM
+CODE VIVA QUESTIONS AND ANSWERS
+Project code: 24B-IT-015
+============================================================
+
+HOW TO USE THIS FILE
+------------------------------------------------------------
+Use these answers to understand and explain the project. Do not claim a
+feature exists if it is listed under limitations. You can shorten answers
+in the viva, but be ready to explain the code examples and flow.
+
+
+PART 1: PROJECT OVERVIEW
+============================================================
+
+Q1. What is your project?
+A. It is a web application for managing classroom allocations in an
+educational institution. Each record connects a course to a department,
+building, room, day, time range, and room capacity.
+
+Q2. What problem does it solve?
+A. It gives staff one place to create, view, update, search, filter, sort,
+and delete classroom schedule records instead of maintaining them only in
+separate manual lists.
+
+Q3. What technologies did you use?
+A. The frontend uses HTML, CSS, and browser JavaScript. The backend uses
+Node.js and Express. MongoDB stores the data, and the MongoDB Node.js
+driver lets the backend run database queries. dotenv reads configuration
+from .env.
+
+Q4. What are the main features?
+A. Create, read, update, and delete allocations; search by allocation ID,
+course code, or course name; filter by department, building, day, room,
+capacity, and time boundaries; and sort results.
+
+Q5. What are the main files?
+A. public/index.html defines page structure; public/styles.css styles it;
+public/app.js handles browser behavior; server/server.js provides the API;
+server/db.js connects to MongoDB; server/seed.js creates indexes and adds
+sample records; package.json defines scripts/dependencies; and run.bat
+starts the project on Windows.
+
+Q6. What does CRUD mean?
+A. CRUD means Create, Read, Update, and Delete. In this app, POST creates,
+GET reads, PUT updates, and DELETE removes records.
+
+
+PART 2: ARCHITECTURE AND FRONTEND/BACKEND FLOW
+============================================================
+
+Q7. How does the frontend connect to the backend?
+A. The frontend uses the browser fetch() API. In public/app.js, the
+request() function sends HTTP requests to routes such as
+/api/allocations. Express in server/server.js handles each route and
+returns JSON.
+
+Q8. Explain the complete flow when the page loads.
+A. Express serves index.html, styles.css, and app.js from the public
+folder. app.js calls loadAllocations(). That function builds a query
+string and calls request(), which uses fetch() to send GET
+/api/allocations. Express creates a MongoDB query, retrieves records, and
+returns JSON. renderRecords() displays the rows in the browser.
+
+Q9. Does the browser connect directly to MongoDB?
+A. No. The browser communicates with the Express API. Only the backend
+connects to MongoDB. This keeps database operations on the server side.
+
+Q10. What does an API do here?
+A. The API is the set of HTTP routes in server/server.js. It provides a
+standard way for the browser to ask the backend to list, retrieve, create,
+update, or delete an allocation.
+
+Q11. What is JSON and where is it used?
+A. JSON is a text format for structured data. The browser sends allocation
+form values as JSON in POST/PUT requests. The backend sends database
+records back as JSON responses.
+
+Q12. What is Express middleware?
+A. Middleware runs while a request passes through Express. express.json()
+parses JSON request bodies. express.static() serves files from public/.
+The final error middleware handles unexpected errors.
+
+Q13. What is fetch()?
+A. fetch() is a browser API for making HTTP requests. This app wraps it in
+request() so all calls parse JSON and convert unsuccessful responses into
+JavaScript errors.
+
+
+PART 3: FRONTEND CODE
+============================================================
+
+Q14. What is in index.html?
+A. It contains the page elements: summary cards, search input, filters,
+schedule table, allocation form dialog, buttons, and toast message area.
+IDs such as searchInput and allocationRows let app.js find and update
+those elements.
+
+Q15. What is in styles.css?
+A. It contains visual styles for page layout, colors, dark mode, light
+mode, buttons, forms, table, dialog, and responsive screen sizes. CSS
+controls appearance, not MongoDB operations.
+
+Q16. What is in app.js?
+A. It reads user input, calls the API with fetch(), renders allocation
+rows, updates summary cards, opens the create/edit dialog, handles delete
+confirmation, and switches the theme.
+
+Q17. What does request() do?
+A. It calls fetch(url, options), parses the JSON response, checks
+response.ok, and throws an error using the API's message when the HTTP
+response is not successful.
+
+Q18. What does filtersToQuery() do?
+A. It reads the current values of search, filter, and sort inputs and
+stores them in URLSearchParams. It returns the query string that is
+appended to GET /api/allocations.
+
+Q19. What does loadAllocations() do?
+A. It requests allocation data from the API, passes the visible results
+to renderRecords(), gets the full list when needed for summary cards and
+filter choices, and handles API errors.
+
+Q20. What does renderRecords() do?
+A. It converts each allocation document into a table row and puts the rows
+inside #allocationRows. If there are no results, it shows the empty state.
+It uses escapeHtml() on database values before inserting them into HTML.
+
+Q21. Why do you use escapeHtml()?
+A. It changes special HTML characters such as <, >, &, and quotes into
+safe HTML entities. This prevents user-entered text from being interpreted
+as HTML markup when displayed in the table.
+
+Q22. What does openForm() do?
+A. If called without a record, it resets the form for a new allocation. If
+given a record, it fills the form for editing. When editing, the allocation
+ID is read-only so the record key is not changed accidentally.
+
+Q23. How does the theme toggle work?
+A. setTheme() changes the body's data-theme attribute, updates the button
+label, and saves the selection to localStorage. When app.js loads, it
+restores the saved theme if one exists. CSS styles the selected theme.
+
+Q24. Why is there a 250 millisecond delay for search?
+A. It is a small debounce. It waits briefly after typing before loading
+results, reducing unnecessary API requests for every single keystroke.
+
+
+PART 4: BACKEND AND API
+============================================================
+
+Q25. What is in server/server.js?
+A. It creates the Express app, configures middleware and static files,
+defines allocation API routes, validates data, creates MongoDB filters,
+sorts results, handles errors, and starts the HTTP server.
+
+Q26. What are the API routes?
+A. GET /api/allocations lists and filters records. GET
+/api/allocations/:allocationId retrieves one record. POST
+/api/allocations creates one. PUT /api/allocations/:allocationId updates
+one. DELETE /api/allocations/:allocationId deletes one.
+
+Q27. What does cleanAllocation() do?
+A. It selects only the expected allocation fields, trims text values, and
+converts capacity to a number. HTML form inputs are strings, so capacity
+must be converted before numeric validation and database filtering.
+
+Q28. What does validateAllocation() check?
+A. It checks that required fields exist, day is a valid weekday, times
+match 24-hour HH:MM format, end time is later than start time, and
+capacity is a positive whole number.
+
+Q29. Why validate on the backend if the form uses required fields?
+A. Browser validation helps users, but it can be bypassed. Server-side
+validation protects the database even if someone calls the API directly
+or changes browser code.
+
+Q30. What status codes does the API use?
+A. 200 is a successful read/update/delete response. 201 means a record was
+created. 400 indicates invalid input. 404 means the allocation ID was not
+found. 409 indicates a duplicate allocation ID. 500 is for an unexpected
+server error.
+
+Q31. What happens when an allocation ID already exists?
+A. MongoDB's unique index rejects the duplicate. The POST handler catches
+MongoDB error code 11000 and returns HTTP 409 with a duplicate-ID message.
+
+Q32. How does the error handler work?
+A. Express passes unexpected errors to the final error middleware. It logs
+the error on the server and returns a generic HTTP 500 JSON message to the
+browser.
+
+
+PART 5: MONGODB AND DATABASE QUERIES
+============================================================
+
+Q33. What database and collection do you use?
+A. The default database is classroom_allocation_db and the collection is
+allocations. These names can be configured using DB_NAME and MONGODB_URI
+in .env.
+
+Q34. What is a MongoDB document?
+A. A document is one JSON-like record in a collection. One allocation
+document contains allocationId, courseCode, courseName, department,
+building, roomNumber, day, startTime, endTime, and numeric capacity.
+
+Q35. What is the difference between a database, collection, and document?
+A. A database groups collections. A collection groups related documents.
+A document is one record. In this app, the database is
+classroom_allocation_db, the collection is allocations, and each course
+schedule is one document.
+
+Q36. Why use MongoDB for this project?
+A. The allocation fields can be represented naturally as a document.
+MongoDB stores flexible JSON-like records and works directly with the
+JavaScript objects used by Node.js.
+
+Q37. What is _id?
+A. MongoDB automatically assigns every document an _id field. The app also
+uses allocationId as a readable unique identifier for URLs and the user
+interface.
+
+Q38. What is an index?
+A. An index is a data structure that can speed up lookups or enforce a
+constraint. This project creates a unique index for allocationId and a
+regular index for courseCode. Indexes use storage and can add work to
+writes, so they should be selected for useful query patterns.
+
+Q39. Which MongoDB operators are used?
+A. $or searches across allocationId, courseCode, and courseName. $and
+combines active filter conditions. $gte and $lte implement inclusive
+numeric/time boundaries. $in supports matching one of multiple requested
+days. sort() orders the results.
+
+Q40. Explain $or in this project.
+A. It means a search result can match any of the search fields. For
+example, the text typed by the user can match the course code OR course
+name OR allocation ID.
+
+Q41. Explain $and in this project.
+A. It means a result must meet every active filter. For example, if the
+user selects Computer Science, Monday, and capacity at least 40, a record
+must satisfy all three conditions.
+
+Q42. Explain $gte and $lte.
+A. $gte means greater than or equal to; $lte means less than or equal to.
+The capacity minimum and maximum are inclusive. These operators also
+compare time strings for the supplied time boundaries.
+
+Q43. Explain $in.
+A. $in matches a field against any value in a list. This API accepts a
+comma-separated days parameter, converts it to an array, and uses
+{ day: { $in: [...] } }. The website currently has a single-day selector,
+so its normal UI request does not send multiple days.
+
+Q44. Does the code use $gt, $lt, or $ne?
+A. No. The current interface needs inclusive lower and upper bounds, so
+$gte and $lte are used. $gt, $lt, and $ne are other MongoDB comparison
+operators that could be used for different query needs.
+
+Q45. How does sorting work?
+A. The UI sends sortBy and order. The backend checks sortBy against an
+allowlist of permitted fields, changes order to 1 for ascending or -1 for
+descending, and passes the sort object to MongoDB's sort().
+
+Q46. What is a regular expression search?
+A. A regular expression matches text patterns. The API uses $regex with
+the i option so searches are case-insensitive. It escapes user input first
+so characters such as * are treated literally.
+
+Q47. What does upsert mean in seed.js?
+A. Upsert means update a matching record or insert one if it does not
+exist. Here it is combined with $setOnInsert, so the seed script inserts
+missing samples but does not overwrite existing records.
+
+
+PART 6: CREATE, UPDATE, DELETE AND SEED FLOW
+============================================================
+
+Q48. Explain creating an allocation.
+A. The user opens the dialog and fills the form. app.js gathers the form
+values and sends POST /api/allocations. The server normalizes and validates
+them. If valid, insertOne() saves the document. The API returns HTTP 201,
+then the browser closes the form, shows a toast, and reloads the list.
+
+Q49. Explain updating an allocation.
+A. The user clicks edit. app.js requests GET by allocationId, fills the
+form, and submits a PUT request. The server validates the updated fields
+and uses findOneAndUpdate() with $set. It returns the updated document.
+
+Q50. What does $set do?
+A. $set updates the specified fields in a MongoDB document. It avoids
+replacing the whole document with a new object.
+
+Q51. Explain deleting an allocation.
+A. The user clicks delete and confirms in a browser dialog. app.js sends a
+DELETE request. The server calls deleteOne() for that allocationId. After
+success, the browser reloads the records.
+
+Q52. What does seed.js do?
+A. It defines 15 sample allocation documents, creates database indexes,
+and uses bulkWrite() with upsert operations to insert sample records that
+are missing. It closes its MongoDB connection at the end.
+
+Q53. Is it safe to run the seed script more than once?
+A. Yes. It checks each sample by allocationId and uses $setOnInsert. It
+does not delete the collection and does not overwrite existing matching
+documents.
+
+
+PART 7: CONFIGURATION AND RUNNING THE APP
+============================================================
+
+Q54. What does .env contain?
+A. It contains environment-specific settings such as MONGODB_URI, DB_NAME,
+and PORT. .env should not be committed or shared if it contains secrets.
+
+Q55. What does dotenv do?
+A. dotenv reads variables from .env and places them in process.env so
+server.js and db.js can use them.
+
+Q56. How do you run the project on Windows?
+A. Start MongoDB, open PowerShell in the project directory, run .\run.bat,
+and open http://localhost:3000. Keep the terminal open while using the
+application. Press Ctrl+C to stop Node.js.
+
+Q57. Why type .\run.bat in PowerShell?
+A. PowerShell does not automatically run files from the current directory
+by bare name. The .\ prefix explicitly means the current directory.
+
+Q58. What does package.json contain?
+A. It contains the project name, dependencies, entry point, and scripts.
+The start script runs server/server.js and the seed script runs
+server/seed.js.
+
+Q59. What does package-lock.json do?
+A. It records the dependency versions selected by npm so the dependency
+tree can be reproduced more consistently on another machine.
+
+
+PART 8: LIMITATIONS AND DESIGN DECISIONS
+============================================================
+
+Q60. Does the application prevent overlapping room bookings?
+A. No. It checks that each individual end time is later than its start
+time, but it does not compare an allocation with other records to detect
+overlap in the same room and day. Conflict detection is a future
+improvement.
+
+Q61. Does the time filter find all overlapping classes?
+A. No. The current filter uses startTime greater than or equal to the
+start boundary and endTime less than or equal to the end boundary. It
+finds records fully inside those boundaries, not every record that
+partially overlaps them.
+
+Q62. Does the website allow selecting multiple days for $in?
+A. No. The backend API supports a comma-separated days parameter and $in,
+but the webpage has a single day dropdown. A multi-select days control
+could expose this query directly to users.
+
+Q63. Does it have login or role-based access?
+A. No. Authentication and authorization are not implemented. This is an
+educational local prototype, not a production-secured application.
+
+Q64. Does it use pagination?
+A. No. It returns every matching record. That is manageable for the small
+sample dataset but pagination would be appropriate for a larger system.
+
+Q65. What would you improve next?
+A. I would add room/time conflict checks, authentication, pagination,
+multi-day filtering, and automated tests. I would also consider stricter
+MongoDB schema validation and better production logging.
+
+Q66. Is MongoDB schema-less?
+A. MongoDB documents are flexible by default, but this does not mean data
+should have no structure. This application defines expected fields and
+validates them in the server. MongoDB schema validation could also be
+added at the collection level.
+
+
+PART 9: CODE SNIPPETS TO RECOGNIZE
+============================================================
+
+Frontend sends request:
+  const response = await fetch(url, options);
+
+Frontend endpoint:
+  const API = '/api/allocations';
+
+Express JSON parser:
+  app.use(express.json());
+
+Connect to database:
+  await client.connect();
+
+Insert one record:
+  await db.collection('allocations').insertOne(item);
+
+Find records:
+  db.collection('allocations').find(filter).sort(sort).toArray();
+
+Find one record:
+  db.collection('allocations').findOne({ allocationId: id });
+
+Update one record:
+  findOneAndUpdate({ allocationId: id }, { $set: item }, ...);
+
+Delete one record:
+  deleteOne({ allocationId: id });
+
+Unique index:
+  createIndex({ allocationId: 1 }, { unique: true });
+
+Create route:
+  app.post('/api/allocations', async (req, res, next) => { ... });
+
+
+PART 10: SHORT ANSWERS TO MEMORIZE
+============================================================
+
+Frontend/backend connector:
+  The browser fetch() API in public/app.js sends HTTP requests to Express.
+
+Database connector:
+  The MongoDB Node.js driver in server/db.js creates a MongoClient and
+  connects the backend to MongoDB.
+
+Search implementation:
+  Search input in index.html -> query handling in app.js -> GET route and
+  $or/$regex MongoDB conditions in server.js.
+
+Main collection:
+  allocations.
+
+Unique user-facing identifier:
+  allocationId.
+
+Main truth about the system:
+  The app supports the core CRUD and search/filter workflow, while
+  collision detection, authentication, pagination, and a multi-day UI
+  are not implemented.
+
+END OF Q&A GUIDE
