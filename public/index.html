@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Classroom Allocations</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-mark" aria-hidden="true">CA</div>
+    <div><p class="eyebrow">CAMPUS OPERATIONS</p><h1>Classroom Allocations</h1></div>
+    <span class="live-label"><span></span> Allocation workspace</span>
+  </header>
+
+  <main class="page-shell">
+    <section class="welcome-row">
+      <div><p class="eyebrow">ROOM &amp; TIMETABLE DIRECTORY</p><h2>Find the right room, at the right time.</h2><p class="subheading">Manage course schedules and classroom capacity in one place.</p></div>
+      <button class="button button-primary" id="addButton" type="button"><span class="plus">＋</span> New allocation</button>
+    </section>
+
+    <section class="stats-grid" aria-label="Allocation summary">
+      <article class="stat-card"><div class="stat-top"><span>Total allocations</span><span class="stat-icon violet">▦</span></div><strong id="totalStat">—</strong><small>Scheduled classes</small></article>
+      <article class="stat-card"><div class="stat-top"><span>Departments</span><span class="stat-icon blue">⌘</span></div><strong id="departmentStat">—</strong><small>Across the institution</small></article>
+      <article class="stat-card"><div class="stat-top"><span>Rooms in use</span><span class="stat-icon green">▤</span></div><strong id="roomStat">—</strong><small>Unique classrooms</small></article>
+      <article class="stat-card"><div class="stat-top"><span>Average capacity</span><span class="stat-icon amber">◉</span></div><strong id="capacityStat">—</strong><small>Seats per allocation</small></article>
+    </section>
+
+    <section class="panel filter-panel">
+      <div class="panel-heading"><div><h3>Find an allocation</h3><p>Search, filter, and sort the timetable.</p></div><button class="text-button" id="clearFilters" type="button">Clear filters</button></div>
+      <div class="filter-grid">
+        <label class="search-field"><span>Search</span><div class="input-wrap"><span class="search-icon">⌕</span><input id="searchInput" type="search" placeholder="Allocation ID, course code or name"></div></label>
+        <label><span>Department</span><select id="departmentFilter"><option value="">All departments</option></select></label>
+        <label><span>Building</span><select id="buildingFilter"><option value="">All buildings</option></select></label>
+        <label><span>Day</span><select id="dayFilter"><option value="">Any day</option><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option></select></label>
+        <label><span>Room</span><input id="roomFilter" type="text" placeholder="e.g. N-101"></label>
+        <label><span>Min. capacity</span><input id="capacityMin" type="number" min="1" placeholder="Any"></label>
+        <label><span>Max. capacity</span><input id="capacityMax" type="number" min="1" placeholder="Any"></label>
+        <label><span>Starts at or after</span><input id="startAfter" type="time"></label>
+        <label><span>Ends at or before</span><input id="endBefore" type="time"></label>
+      </div>
+      <div class="filter-footer"><p id="resultCount">Loading allocations…</p><div class="sort-controls"><label for="sortBy">Sort by</label><select id="sortBy"><option value="day">Day</option><option value="startTime">Start time</option><option value="courseCode">Course code</option><option value="department">Department</option><option value="building">Building</option><option value="capacity">Capacity</option><option value="allocationId">Allocation ID</option></select><button class="sort-direction" id="sortDirection" type="button" aria-label="Toggle sort direction">↑ Asc</button></div></div>
+    </section>
+
+    <section class="panel table-panel">
+      <div class="table-heading"><div><h3>Allocation schedule</h3><p>Browse the current classroom timetable.</p></div><span class="table-tag">LIVE DIRECTORY</span></div>
+      <div class="table-scroll"><table><thead><tr><th>ALLOCATION</th><th>COURSE</th><th>DEPARTMENT</th><th>ROOM</th><th>DAY &amp; TIME</th><th>CAPACITY</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody id="allocationRows"></tbody></table></div>
+      <div id="emptyState" class="empty-state" hidden><div class="empty-icon">⌕</div><h3>No allocations found</h3><p>Try adjusting your filters or add a new classroom allocation.</p><button class="button button-secondary" id="emptyAddButton" type="button">＋ Add allocation</button></div>
+    </section>
+    <footer>CLASSROOM ALLOCATION MANAGEMENT <span>·</span> DATABASE SYSTEMS</footer>
+  </main>
+
+  <dialog id="allocationDialog">
+    <form id="allocationForm" class="dialog-form">
+      <div class="dialog-heading"><div><p class="eyebrow" id="formEyebrow">NEW SCHEDULE ENTRY</p><h2 id="dialogTitle">Add allocation</h2></div><button type="button" class="close-button" id="closeDialog" aria-label="Close">×</button></div>
+      <p class="dialog-intro">Fill in the course and classroom details below.</p>
+      <div class="form-grid">
+        <label><span>Allocation ID</span><input name="allocationId" required maxlength="24" placeholder="e.g. AL-1016"></label>
+        <label><span>Course code</span><input name="courseCode" required maxlength="20" placeholder="e.g. CS101"></label>
+        <label class="span-two"><span>Course name</span><input name="courseName" required maxlength="100" placeholder="e.g. Introduction to Programming"></label>
+        <label><span>Department</span><input name="department" required maxlength="60" placeholder="e.g. Computer Science"></label>
+        <label><span>Building</span><input name="building" required maxlength="60" placeholder="e.g. North Block"></label>
+        <label><span>Room number</span><input name="roomNumber" required maxlength="20" placeholder="e.g. N-101"></label>
+        <label><span>Day</span><select name="day" required><option value="">Choose a day</option><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option></select></label>
+        <label><span>Start time</span><input name="startTime" type="time" required></label>
+        <label><span>End time</span><input name="endTime" type="time" required></label>
+        <label><span>Room capacity</span><input name="capacity" type="number" min="1" step="1" required placeholder="e.g. 60"></label>
+      </div>
+      <p id="formError" class="form-error" role="alert"></p>
+      <div class="dialog-actions"><button class="button button-secondary" id="cancelDialog" type="button">Cancel</button><button class="button button-primary" id="saveButton" type="submit">Save allocation <span>→</span></button></div>
+    </form>
+  </dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
